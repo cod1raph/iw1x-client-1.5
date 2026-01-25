@@ -115,7 +115,7 @@ namespace imgui
             ImGui::Checkbox("FOV scale", &cg_fovScaleEnable);
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             if (!cg_fovScaleEnable) ImGui::BeginDisabled();
-            ImGui::SliderFloat("##slider_cg_fovScale", &cg_fovScale, 1.f, 1.3f, "%.2f", ImGuiSliderFlags_NoInput);
+            ImGui::SliderFloat("##slider_cg_fovScale", &cg_fovScale, view::cg_fovScale_min, view::cg_fovScale_max, "%.2f", ImGuiSliderFlags_NoInput);
             if (!cg_fovScaleEnable) ImGui::EndDisabled();
 
         ENDTABITEM_SPACED()

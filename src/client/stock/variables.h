@@ -13,4 +13,6 @@ namespace stock
     WEAK adjuster<HWND> hWnd{ 0x01999d68 };
     WEAK adjuster<qboolean> mouseActive{ 0x0093b3a0 };
     WEAK adjuster<qboolean> mouseInitialized{ 0x0093b3a4 };
+    WEAK adjuster<int> cmd_argc{ 0x008d5020 };
+    WEAK adjuster<char*> cmd_argv{ 0x008d2620 };
 }
