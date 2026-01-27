@@ -69,12 +69,12 @@ static void enable_dpi_awareness()
 
 static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lpProcName)
 {
-    /*// Check for ordinal
+    // Check for ordinal
     if (HIWORD(lpProcName) == 0)
     {
         const WORD ordinal = LOWORD(lpProcName);
         return GetProcAddress(hModule, lpProcName);
-    }*/
+    }
 
     if (!strcmp(lpProcName, "GlobalMemoryStatusEx"))
         component_loader::post_unpack();
@@ -221,6 +221,16 @@ static FARPROC load_binary()
 
     loader.set_import_resolver([self](const std::string& library, const std::string& function) -> void*
         {
+
+
+            if (library == "steam_api.dll")
+            {
+                return self.get_proc<FARPROC>(function);
+            }
+
+
+
+
             if (function == "ExitProcess")
                 return stub_ExitProcess;
             if (function == "GetProcAddress")
@@ -252,14 +262,14 @@ static FARPROC load_binary()
         throw std::runtime_error(ss.str());
     }
 
-    if (compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
+    /*if (compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
     {
         std::stringstream ss;
         ss << MOD_NAME << " doesn't support the Steam version currently, you can use the CD version.";
         throw std::runtime_error(ss.str());
-    }
+    }*/
     
-    if (!compare_md5(data_codmp, "4BDF293D8E6FB32208D1B0942A1BA6BC"))
+    if (!compare_md5(data_codmp, "4BDF293D8E6FB32208D1B0942A1BA6BC") && !compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
     {
         std::stringstream ss;
         ss << "Your " << client_filename << " file hash doesn't match the original.";

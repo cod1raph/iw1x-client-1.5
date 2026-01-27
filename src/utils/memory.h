@@ -59,6 +59,10 @@ namespace utils
         static void free(void* data);
         static void free(const void* data);
 
+        static bool is_bad_read_ptr(const void* ptr);
+        static bool is_bad_code_ptr(const void* ptr);
+        static bool is_rdata_ptr(void* ptr);
+
         static allocator* get_allocator();
 
     private:
