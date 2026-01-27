@@ -69,12 +69,21 @@ static void enable_dpi_awareness()
 
 static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lpProcName)
 {
-    // Check for ordinal
+    // Check for ordinal, seems required for 1.5 but not for 1.1
+#if 1
     if (HIWORD(lpProcName) == 0)
     {
         const WORD ordinal = LOWORD(lpProcName);
+#if 0
+        char moduleName[MAX_PATH]{};
+        GetModuleFileNameA(hModule, moduleName, MAX_PATH);
+        std::stringstream ss;
+        ss << "###### stub_GetProcAddress: ordinal: " << ordinal << " from module: " << moduleName << std::endl;
+        OutputDebugString(ss.str().c_str());
+#endif
         return GetProcAddress(hModule, lpProcName);
     }
+#endif
 
     if (!strcmp(lpProcName, "GlobalMemoryStatusEx"))
         component_loader::post_unpack();
@@ -227,7 +236,6 @@ static FARPROC load_binary()
             {
                 return self.get_proc<FARPROC>(function);
             }
-
 
 
 

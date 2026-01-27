@@ -94,7 +94,7 @@ void loader::load_imports(const utils::nt::library& target, const utils::nt::lib
             }
 #if 0
             std::stringstream ss;
-            ss << "###### " << function_name << std::endl;
+            ss << "###### load_imports: function_name: " << function_name << std::endl;
             OutputDebugString(ss.str().c_str());
 #endif
             if (this->import_resolver_) function = FARPROC(this->import_resolver_(name, function_name));

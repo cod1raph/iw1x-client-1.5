@@ -1,28 +1,113 @@
 #include "pch.h"
 #include "steam/steam.h"
 
+
+
 namespace steam
 {
-    const char* SteamAPI_GetSteamInstallPath()
+
+
+
+
+    uint64_t callbacks::call_id_ = 0;
+    std::recursive_mutex callbacks::mutex_;
+    std::map<uint64_t, bool> callbacks::calls_;
+    std::map<uint64_t, callbacks::base*> callbacks::result_handlers_;
+    std::vector<callbacks::result> callbacks::results_;
+    std::vector<callbacks::base*> callbacks::callback_list_;
+
+    uint64_t callbacks::register_call()
     {
-        static std::string install_path{};
-        if (!install_path.empty())
-        {
-            return install_path.data();
-        }
-        
-        HKEY reg_key;
-        if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\Valve\\Steam", 0, KEY_QUERY_VALUE, &reg_key) == ERROR_SUCCESS)
-        {
-            char path[MAX_PATH] = {0};
-            DWORD length = sizeof(path);
-            
-            RegQueryValueExA(reg_key, "InstallPath", nullptr, nullptr, reinterpret_cast<BYTE*>(path), &length);
-            RegCloseKey(reg_key);
-            install_path = path;
-        }
-        return install_path.data();
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+        calls_[++call_id_] = false;
+        return call_id_;
     }
+
+    void callbacks::register_callback(base* handler, const int callback)
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+        handler->set_i_callback(callback);
+        callback_list_.push_back(handler);
+    }
+
+    void callbacks::unregister_callback(base* handler)
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+        for (auto i = callback_list_.begin(); i != callback_list_.end();)
+        {
+            if (*i == handler)
+            {
+                i = callback_list_.erase(i);
+            }
+            else
+            {
+                ++i;
+            }
+        }
+    }
+
+    void callbacks::register_call_result(const uint64_t call, base* result)
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+        result_handlers_[call] = result;
+    }
+
+    void callbacks::unregister_call_result(const uint64_t call, base* /*result*/)
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+        const auto i = result_handlers_.find(call);
+        if (i != result_handlers_.end())
+        {
+            result_handlers_.erase(i);
+        }
+    }
+
+    void callbacks::return_call(void* data, const int size, const int type, const uint64_t call)
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+
+        result result{};
+        result.call = call;
+        result.data = data;
+        result.size = size;
+        result.type = type;
+
+        calls_[call] = true;
+
+        results_.emplace_back(result);
+    }
+
+    void callbacks::run_callbacks()
+    {
+        std::lock_guard<std::recursive_mutex> _(mutex_);
+
+        for (const auto& result : results_)
+        {
+            if (result_handlers_.find(result.call) != result_handlers_.end())
+            {
+                result_handlers_[result.call]->run(result.data, false, result.call);
+            }
+
+            /*for (const auto& callback : callback_list_)
+            {
+                if (callback && callback->get_i_callback() == result.type)
+                {
+                    callback->run(result.data, false, 0);
+                }
+            }*/
+
+            if (result.data)
+            {
+                free(result.data);
+            }
+        }
+
+        results_.clear();
+    }
+
+
+
+    
     
     extern "C"
     {
@@ -38,6 +123,27 @@ namespace steam
             ::utils::nt::library::load(steam_path / "steamclient.dll");
             
             return true;
+        }
+
+        const char* SteamAPI_GetSteamInstallPath()
+        {
+            static std::string install_path{};
+            if (!install_path.empty())
+            {
+                return install_path.data();
+            }
+
+            HKEY reg_key;
+            if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "Software\\Valve\\Steam", 0, KEY_QUERY_VALUE, &reg_key) == ERROR_SUCCESS)
+            {
+                char path[MAX_PATH] = { 0 };
+                DWORD length = sizeof(path);
+
+                RegQueryValueExA(reg_key, "InstallPath", nullptr, nullptr, reinterpret_cast<BYTE*>(path), &length);
+                RegCloseKey(reg_key);
+                install_path = path;
+            }
+            return install_path.data();
         }
     }
 }

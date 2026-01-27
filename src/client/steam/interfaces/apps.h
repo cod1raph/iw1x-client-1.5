@@ -2,15 +2,15 @@
 
 namespace steam
 {
-	class apps
-	{
-	public:
-		~apps() = default;
+    class apps
+    {
+    public:
+        ~apps() = default;
 
-		apps()
-		{
-		}
+        apps()
+        {
+        }
 
-		virtual bool BIsSubscribedApp(unsigned int appID);
-	};
+        virtual bool BIsSubscribedApp(unsigned int appID);
+    };
 }

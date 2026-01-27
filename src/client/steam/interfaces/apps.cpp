@@ -3,8 +3,8 @@
 
 namespace steam
 {
-	bool apps::BIsSubscribedApp(unsigned int appID)
-	{
-		return true;
-	}
+    bool apps::BIsSubscribedApp(unsigned int appID)
+    {
+        return true;
+    }
 }

@@ -78,6 +78,7 @@ namespace steam_proxy
 
             return nullptr;
         }
+
         void load_client()
         {
             const std::filesystem::path steam_path = steam::SteamAPI_GetSteamInstallPath();
