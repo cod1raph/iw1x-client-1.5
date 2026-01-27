@@ -32,7 +32,13 @@ namespace steam_proxy
             }
             catch (std::exception& e)
             {
-                printf("Steam: %s\n", e.what());
+
+                std::stringstream ss;
+                ss << "###### ERR: " << e.what() << std::endl;
+                OutputDebugString(ss.str().c_str());
+
+
+                //printf("Steam: %s\n", e.what());
             }
 
 
