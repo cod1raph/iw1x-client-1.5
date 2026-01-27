@@ -11,9 +11,31 @@ namespace steam_proxy
     class component final : public component_interface
     {
     public:
+        
+        
         void post_load() override
         {
+
+
+            const auto app_id = 2620;
+
+            SetEnvironmentVariableA("SteamAppId", utils::string::va("%lu", app_id));
+            SetEnvironmentVariableA("SteamGameId", utils::string::va("%llu", app_id & 0xFFFFFF));
+
+
+
             this->load_client();
+
+            try
+            {
+                this->start_mod(app_id);
+            }
+            catch (std::exception& e)
+            {
+                printf("Steam: %s\n", e.what());
+            }
+
+
         }
         
         
@@ -44,8 +66,7 @@ namespace steam_proxy
             for (auto i = 1; i > 0; ++i)
             {
                 std::string name = utils::string::va("CLIENTENGINE_INTERFACE_VERSION%03i", i);
-                auto* const client_engine = this->steam_client_module_
-                    .invoke<void*>("CreateInterface", name.data(), nullptr);
+                auto* const client_engine = this->steam_client_module_.invoke<void*>("CreateInterface", name.data(), nullptr);
                 if (client_engine) return client_engine;
             }
 
@@ -69,10 +90,21 @@ namespace steam_proxy
             if (!this->client_engine_) return;
 
             this->steam_pipe_ = this->steam_client_module_.invoke<void*>("Steam_CreateSteamPipe");
-            this->global_user_ = this->steam_client_module_.invoke<void*>(
-                "Steam_ConnectToGlobalUser", this->steam_pipe_);
+            this->global_user_ = this->steam_client_module_.invoke<void*>("Steam_ConnectToGlobalUser", this->steam_pipe_);
             this->client_user_ = client_engine_.invoke<void*>(8, steam_pipe_, global_user_); // GetIClientUser
             this->client_utils_ = this->client_engine_.invoke<void*>(14, this->steam_pipe_); // GetIClientUtils
+        }
+
+        void start_mod(size_t app_id)
+        {
+            if (!this->client_utils_ || !this->client_user_) return;
+
+            if (!this->client_user_.invoke<bool>("BIsSubscribedApp", app_id))
+            {
+                app_id = 480; // Spacewar
+            }
+
+            this->client_utils_.invoke<void>("SetAppIDForCurrentPipe", app_id, false);
         }
 
     };
