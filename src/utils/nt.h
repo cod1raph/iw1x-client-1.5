@@ -90,4 +90,6 @@ namespace utils::nt
     private:
         HMODULE module;
     };
+
+    std::string load_resource(int id);
 }

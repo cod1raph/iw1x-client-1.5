@@ -1,8 +1,37 @@
 #pragma once
 
+#define STEAM_EXPORT extern "C" __declspec(dllexport)
+
 #include "nt.h"
 
-#define STEAM_EXPORT extern "C" __declspec(dllexport)
+struct raw_steam_id final
+{
+	unsigned int account_id : 32;
+	unsigned int account_instance : 20;
+	unsigned int account_type : 4;
+	int universe : 8;
+};
+
+typedef union
+{
+	raw_steam_id raw;
+	unsigned long long bits;
+} steam_id;
+
+#pragma pack( push, 1 )
+struct raw_game_id final
+{
+	unsigned int app_id : 24;
+	unsigned int type : 8;
+	unsigned int mod_id : 32;
+};
+
+typedef union
+{
+	raw_game_id raw;
+	unsigned long long bits;
+} game_id;
+#pragma pack( pop )
 
 #include "interfaces/apps.h"
 
@@ -10,8 +39,6 @@
 
 namespace steam
 {
-
-
     class callbacks
     {
     public:
@@ -64,8 +91,11 @@ namespace steam
         static std::vector<base*> callback_list_;
     };
 
-
-
-    STEAM_EXPORT bool SteamAPI_Init();
     STEAM_EXPORT const char* SteamAPI_GetSteamInstallPath();
+
+    STEAM_EXPORT bool SteamAPI_RestartAppIfNecessary();
+    STEAM_EXPORT bool SteamAPI_Init();
+    STEAM_EXPORT void SteamAPI_RegisterCallResult(callbacks::base* result, uint64_t call);
+    STEAM_EXPORT void SteamAPI_RegisterCallback(callbacks::base* handler, int callback);
+    STEAM_EXPORT void SteamAPI_RunCallbacks();
 }

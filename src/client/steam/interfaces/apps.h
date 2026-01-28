@@ -11,6 +11,6 @@ namespace steam
         {
         }
 
-        virtual bool BIsSubscribedApp(unsigned int appID);
+        virtual bool BIsSubscribedApp(/*unsigned int appID*/);
     };
 }

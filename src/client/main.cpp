@@ -72,9 +72,9 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
     // Check for ordinal, seems required for 1.5 but not for 1.1
 #if 1
     if (HIWORD(lpProcName) == 0)
-    {
-        const WORD ordinal = LOWORD(lpProcName);
+    {   
 #if 0
+        const WORD ordinal = LOWORD(lpProcName);
         char moduleName[MAX_PATH]{};
         GetModuleFileNameA(hModule, moduleName, MAX_PATH);
         std::stringstream ss;
@@ -85,8 +85,21 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
     }
 #endif
 
-    if (!strcmp(lpProcName, "GlobalMemoryStatusEx"))
-        component_loader::post_unpack();
+#if 0
+    std::stringstream ss;
+    ss << "###### stub_GetProcAddress: lpProcName: " << lpProcName << std::endl;
+    OutputDebugString(ss.str().c_str());
+#endif
+
+
+
+    //if (!strcmp(lpProcName, "SteamCleanup"))
+
+
+    //if (!strcmp(lpProcName, "GlobalMemoryStatus"))
+        //component_loader::post_unpack();
+
+
     return GetProcAddress(hModule, lpProcName);
 }
 
@@ -98,6 +111,13 @@ static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
     if (lpLibFileName != NULL)
     {
         auto fileName = PathFindFileNameA(lpLibFileName);
+
+#if 0
+        std::stringstream ss;
+        ss << "###### stub_LoadLibraryA: fileName: " << fileName << std::endl;
+        OutputDebugString(ss.str().c_str());
+#endif
+        
         if (!strcmp(fileName, "cgame_mp_x86.dll"))
         {
             address_cgame_mp = hModule_address;
@@ -227,12 +247,16 @@ static FARPROC load_binary()
 {
     loader loader;
     const utils::nt::library self;
-
+    
     loader.set_import_resolver([self](const std::string& library, const std::string& function) -> void*
         {
-
-
-            if (library == "steam_api.dll")
+#if 0
+            std::stringstream ss;
+            ss << "###### set_import_resolver: library: " << library << ", function: " << function << std::endl;
+            OutputDebugString(ss.str().c_str());
+#endif
+            
+            if (library == "steam_api.dll") // Never called, idk if it should be anyway
             {
                 return self.get_proc<FARPROC>(function);
             }
@@ -307,12 +331,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR lpCmdLine, _In
 
     enable_dpi_awareness();
         
-    std::string cmdLine = lpCmdLine;
+    /*std::string cmdLine = lpCmdLine;
     if (!cmdLine.empty())
     {
         // Transfer lpCmdLine to the window component for stub_Com_Init
         strncpy_s(window::sys_cmdline, cmdLine.c_str(), sizeof(window::sys_cmdline));
-    }
+    }*/
     
     auto premature_shutdown = true;
     const auto _ = gsl::finally([&premature_shutdown]()

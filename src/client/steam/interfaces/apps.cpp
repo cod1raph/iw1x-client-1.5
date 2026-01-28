@@ -3,7 +3,7 @@
 
 namespace steam
 {
-    bool apps::BIsSubscribedApp(unsigned int appID)
+    bool apps::BIsSubscribedApp(/*unsigned int appID*/)
     {
         return true;
     }

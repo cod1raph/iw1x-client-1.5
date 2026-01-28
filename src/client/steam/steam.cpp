@@ -1,14 +1,8 @@
 #include "pch.h"
 #include "steam/steam.h"
 
-
-
 namespace steam
 {
-
-
-
-
     uint64_t callbacks::call_id_ = 0;
     std::recursive_mutex callbacks::mutex_;
     std::map<uint64_t, bool> callbacks::calls_;
@@ -104,13 +98,14 @@ namespace steam
 
         results_.clear();
     }
-
-
-
-    
     
     extern "C"
     {
+        bool SteamAPI_RestartAppIfNecessary()
+        {
+            return false;
+        }
+        
         bool SteamAPI_Init()
         {
             const std::filesystem::path steam_path = steam::SteamAPI_GetSteamInstallPath();
@@ -120,9 +115,24 @@ namespace steam
             }
             
             ::utils::nt::library::load(steam_path / "gameoverlayrenderer.dll");
-            ::utils::nt::library::load(steam_path / "steamclient.dll");
+            //::utils::nt::library::load(steam_path / "steamclient.dll");
             
             return true;
+        }
+
+        void SteamAPI_RegisterCallResult(callbacks::base* result, const uint64_t call)
+        {
+            callbacks::register_call_result(call, result);
+        }
+
+        void SteamAPI_RegisterCallback(callbacks::base* handler, const int callback)
+        {
+            callbacks::register_callback(handler, callback);
+        }
+
+        void SteamAPI_RunCallbacks()
+        {
+            callbacks::run_callbacks();
         }
 
         const char* SteamAPI_GetSteamInstallPath()

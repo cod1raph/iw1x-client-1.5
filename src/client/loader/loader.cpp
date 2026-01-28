@@ -36,12 +36,12 @@ void loader::load_section(const utils::nt::library& target, const utils::nt::lib
 
     if (section->SizeOfRawData > 0)
     {
-#if 0
+#if 1
         std::memmove(target_ptr, source_ptr, section->SizeOfRawData);
 
         DWORD old_protect;
         VirtualProtect(target_ptr, section->Misc.VirtualSize, PAGE_EXECUTE_READWRITE, &old_protect);
-#else	// Recommended by wroyca
+#else	// Recommended by wroyca // But crashes winmain 1.5
         const auto size_of_data = std::min(section->SizeOfRawData, section->Misc.VirtualSize);
         std::memmove(target_ptr, source_ptr, size_of_data);
 

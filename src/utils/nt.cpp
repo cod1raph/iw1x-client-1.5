@@ -101,4 +101,15 @@ namespace utils::nt
     {
         return this->module;
     }
+
+    std::string load_resource(const int id)
+    {
+        auto* const res = FindResource(library(), MAKEINTRESOURCE(id), RT_RCDATA);
+        if (!res) return {};
+
+        auto* const handle = LoadResource(nullptr, res);
+        if (!handle) return {};
+
+        return std::string(LPSTR(LockResource(handle)), SizeofResource(nullptr, res));
+    }
 }

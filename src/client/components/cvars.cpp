@@ -1,5 +1,5 @@
 #include "pch.h"
-#if 1
+#if 0
 #include "cvars.h"
 
 namespace cvars
