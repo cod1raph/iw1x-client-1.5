@@ -31,4 +31,4 @@ constexpr auto BINARY_PAYLOAD_SIZE = 0x1899C00;
 
 constexpr auto MOD_NAME = "iw1x-1.5";
 
-#pragma warning(disable: 26440) // Disable "Function '' can be declared 'noexcept'" warning
+#pragma warning(disable: 26440) // "Function '' can be declared 'noexcept'"

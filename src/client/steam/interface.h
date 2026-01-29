@@ -11,9 +11,6 @@
 
 namespace steam
 {
-
-
-
     class interface final
     {
     public:

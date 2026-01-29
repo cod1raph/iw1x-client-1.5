@@ -7,7 +7,12 @@
 #include "loader/loader.h"
 #include "loader/component_loader.h"
 
-bool clientNamedMohaa = false;
+
+#include "steam/steam.h"
+#include <cstring>
+#include <cctype>
+
+
 DWORD address_cgame_mp;
 DWORD address_ui_mp;
 utils::hook::detour hook_GetModuleFileNameW;
@@ -72,13 +77,22 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
 #endif
     
 
-        
-    if (strstr(lpProcName, "Steam"))
+
+    if (!strcmp(lpProcName, "SteamIsAppSubscribed"))
     {
-        std::stringstream ss;
-        ss << "###### stub_GetProcAddress strstr Steam: " << lpProcName << std::endl;
-        OutputDebugString(ss.str().c_str());
+
     }
+    if (!strcmp(lpProcName, "SteamStartup"))
+    {
+
+    }
+    if (!strcmp(lpProcName, "SteamCleanup"))
+    {
+
+    }
+
+
+
 
 
 
@@ -88,6 +102,8 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
 
     return GetProcAddress(hModule, lpProcName);
 }
+
+
 
 static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
 {
@@ -104,12 +120,6 @@ static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
         OutputDebugString(ss.str().c_str());
 #endif
 
-
-        if (!strcmp(fileName, "steam.dll"))
-        {
-
-
-        }
 
 
 
@@ -235,7 +245,7 @@ static FARPROC load_binary()
     
     loader.set_import_resolver([self](const std::string& library, const std::string& function) -> void*
         {
-#if 1
+#if 0
             std::stringstream ss;
             ss << "###### set_import_resolver: library: " << library << ", function: " << function << std::endl;
             OutputDebugString(ss.str().c_str());

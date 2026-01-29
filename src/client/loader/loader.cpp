@@ -83,7 +83,7 @@ void loader::load_imports(const utils::nt::library& target, const utils::nt::lib
                 function_name = import->Name;
                 function_procname = function_name.data();
             }
-#if 1
+#if 0
             std::stringstream ss;
             ss << "###### load_imports: function_name: " << function_name << std::endl;
             OutputDebugString(ss.str().c_str());

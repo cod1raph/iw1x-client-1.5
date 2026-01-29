@@ -8,10 +8,10 @@
 namespace steam_proxy
 {
     const auto app_id = 2620;
-    
+
     utils::nt::library steam{};
     utils::nt::library steam_client{};
-
+    
     const char* SteamAPI_GetSteamInstallPath()
     {
         static std::string install_path{};
@@ -35,20 +35,18 @@ namespace steam_proxy
     
     void load()
     {
-        SetEnvironmentVariableA("SteamAppId", std::to_string(app_id).data());
-        
         const std::filesystem::path steam_path = SteamAPI_GetSteamInstallPath();
         if (steam_path.empty()) return;
-        steam = utils::nt::library::load(steam_path / "steam.dll");
-        utils::nt::library::load(steam_path / "gameoverlayrenderer.dll");
-        steam_client = utils::nt::library::load(steam_path / "steamclient.dll");
-        if (!steam_client) return;
+
+        SetEnvironmentVariableA("SteamAppId", std::to_string(app_id).data());
+        utils::nt::library::load(steam_path / "steam.dll");
+        //steam_client = utils::nt::library::load(steam_path / "steamclient.dll");
+        //utils::nt::library::load(steam_path / "gameoverlayrenderer.dll");
 
 
 
         
     }
-
     
     class component final : public component_interface
     {
@@ -58,8 +56,6 @@ namespace steam_proxy
             load();
         }
     };
-
-
 }
 
 REGISTER_COMPONENT(steam_proxy::component)
