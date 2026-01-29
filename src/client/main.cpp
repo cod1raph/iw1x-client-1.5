@@ -7,8 +7,6 @@
 #include "loader/loader.h"
 #include "loader/component_loader.h"
 
-#include "components/window.h"
-
 bool clientNamedMohaa = false;
 DWORD address_cgame_mp;
 DWORD address_ui_mp;
@@ -48,52 +46,40 @@ static LONG WINAPI CrashLogger(EXCEPTION_POINTERS* exceptionPointers)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-static std::string get_client_filename()
-{
-    return clientNamedMohaa ? "mohaa.exe" : "CoDMP.exe";
-}
 
-static void enable_dpi_awareness()
-{
-    const utils::nt::library user32{ "user32.dll" };
-    const auto set_dpi = user32 ? user32.get_proc<BOOL(WINAPI*)(DPI_AWARENESS_CONTEXT)>("SetProcessDpiAwarenessContext") : nullptr;
-    if (set_dpi)
-        set_dpi(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-}
 
-[[noreturn]] static void WINAPI stub_ExitProcess(const int code)
-{
-    component_loader::pre_destroy();
-    std::exit(code);
-}
+
+
+
+
+
+
+
+
+
 
 static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lpProcName)
 {
-    // Check for ordinal, seems required for 1.5 but not for 1.1
-#if 1
     if (HIWORD(lpProcName) == 0)
-    {   
-#if 0
-        const WORD ordinal = LOWORD(lpProcName);
-        char moduleName[MAX_PATH]{};
-        GetModuleFileNameA(hModule, moduleName, MAX_PATH);
-        std::stringstream ss;
-        ss << "###### stub_GetProcAddress: ordinal: " << ordinal << " from module: " << moduleName << std::endl;
-        OutputDebugString(ss.str().c_str());
-#endif
+    {
         return GetProcAddress(hModule, lpProcName);
     }
-#endif
 
 #if 0
     std::stringstream ss;
     ss << "###### stub_GetProcAddress: lpProcName: " << lpProcName << std::endl;
     OutputDebugString(ss.str().c_str());
 #endif
+    
 
+        
+    if (strstr(lpProcName, "Steam"))
+    {
+        std::stringstream ss;
+        ss << "###### stub_GetProcAddress strstr Steam: " << lpProcName << std::endl;
+        OutputDebugString(ss.str().c_str());
+    }
 
-
-    //if (!strcmp(lpProcName, "SteamCleanup"))
 
 
     //if (!strcmp(lpProcName, "GlobalMemoryStatus"))
@@ -117,17 +103,16 @@ static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
         ss << "###### stub_LoadLibraryA: fileName: " << fileName << std::endl;
         OutputDebugString(ss.str().c_str());
 #endif
-        
-        if (!strcmp(fileName, "cgame_mp_x86.dll"))
+
+
+        if (!strcmp(fileName, "steam.dll"))
         {
-            address_cgame_mp = hModule_address;
-            component_loader::post_cgame();
+
+
         }
-        else if (!strcmp(fileName, "ui_mp_x86.dll"))
-        {
-            address_ui_mp = hModule_address;
-            component_loader::post_ui_mp();
-        }
+
+
+
     }
     return ret;
 }
@@ -146,7 +131,7 @@ static DWORD WINAPI stub_GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, D
     if (!strcmp(PathFindFileNameA(lpFilename), "iw1x-1.5.exe"))
     {
         std::filesystem::path path = lpFilename;
-        auto binary = get_client_filename();
+        auto binary = "CoDMP.exe";
         path.replace_filename(binary);
         std::string pathStr = path.string();
         std::copy(pathStr.begin(), pathStr.end(), lpFilename);
@@ -168,7 +153,7 @@ static DWORD WINAPI stub_GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename, 
     {
         std::filesystem::path pathFs = pathStr;
 
-        auto client_filename = get_client_filename();
+        auto client_filename = "CoDMP.exe";
         pathFs.replace_filename(client_filename);
         pathStr = pathFs.string();
 
@@ -250,21 +235,13 @@ static FARPROC load_binary()
     
     loader.set_import_resolver([self](const std::string& library, const std::string& function) -> void*
         {
-#if 0
+#if 1
             std::stringstream ss;
             ss << "###### set_import_resolver: library: " << library << ", function: " << function << std::endl;
             OutputDebugString(ss.str().c_str());
 #endif
             
-            if (library == "steam_api.dll") // Never called, idk if it should be anyway
-            {
-                return self.get_proc<FARPROC>(function);
-            }
-
-
-
-            if (function == "ExitProcess")
-                return stub_ExitProcess;
+            
             if (function == "GetProcAddress")
                 return stub_GetProcAddress;
             if (function == "LoadLibraryA")
@@ -276,13 +253,8 @@ static FARPROC load_binary()
     const utils::nt::library kernel32("kernel32.dll");
     hook_GetModuleFileNameW.create(kernel32.get_proc<DWORD(WINAPI*)(HMODULE, LPWSTR, DWORD)>("GetModuleFileNameW"), stub_GetModuleFileNameW);
     hook_GetModuleFileNameA.create(kernel32.get_proc<DWORD(WINAPI*)(HMODULE, LPSTR, DWORD)>("GetModuleFileNameA"), stub_GetModuleFileNameA);
-    
-    // Check if CoDMP is named mohaa
-    std::filesystem::path currentPath_mohaa_test = std::filesystem::current_path() / "mohaa.exe";
-    if (std::ifstream(currentPath_mohaa_test.string()).good())
-        clientNamedMohaa = true;
 
-    auto client_filename = get_client_filename();
+    auto client_filename = "CoDMP.exe";
 
     std::string data_codmp;
 
@@ -293,15 +265,8 @@ static FARPROC load_binary()
         ss << std::endl << std::endl << "Is " << MOD_NAME << " in your CoD folder?";
         throw std::runtime_error(ss.str());
     }
-
-    /*if (compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
-    {
-        std::stringstream ss;
-        ss << MOD_NAME << " doesn't support the Steam version currently, you can use the CD version.";
-        throw std::runtime_error(ss.str());
-    }*/
     
-    if (!compare_md5(data_codmp, "4BDF293D8E6FB32208D1B0942A1BA6BC") && !compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
+    if (!compare_md5(data_codmp, "4F4596B1CDB21F9EB62E6683ECF48DC6"))
     {
         std::stringstream ss;
         ss << "Your " << client_filename << " file hash doesn't match the original.";
@@ -328,15 +293,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR lpCmdLine, _In
     DeleteFileA("__codmp");
     DeleteFileA("__mohaa");
 #endif
-
-    enable_dpi_awareness();
-        
-    /*std::string cmdLine = lpCmdLine;
-    if (!cmdLine.empty())
-    {
-        // Transfer lpCmdLine to the window component for stub_Com_Init
-        strncpy_s(window::sys_cmdline, cmdLine.c_str(), sizeof(window::sys_cmdline));
-    }*/
     
     auto premature_shutdown = true;
     const auto _ = gsl::finally([&premature_shutdown]()
@@ -364,6 +320,5 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR lpCmdLine, _In
         return 1;
     }
     
-    CreateMutexA(NULL, TRUE, MOD_NAME);
     return static_cast<int>(entry_point());
 }

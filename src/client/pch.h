@@ -27,9 +27,6 @@
 Size found using Ghidra
 IMAGE_NT_HEADERS32 -> IMAGE_OPTIONAL_HEADER32: SizeOfImage - SizeOfHeaders
 */
-// CD:		0x1897000
-// Steam:	0x1899C00
-// Currently using the bigger value to be able to inform that Steam is currently unsupported.
 constexpr auto BINARY_PAYLOAD_SIZE = 0x1899C00;
 
 constexpr auto MOD_NAME = "iw1x-1.5";

@@ -36,18 +36,9 @@ void loader::load_section(const utils::nt::library& target, const utils::nt::lib
 
     if (section->SizeOfRawData > 0)
     {
-#if 1
         std::memmove(target_ptr, source_ptr, section->SizeOfRawData);
-
         DWORD old_protect;
         VirtualProtect(target_ptr, section->Misc.VirtualSize, PAGE_EXECUTE_READWRITE, &old_protect);
-#else	// Recommended by wroyca // But crashes winmain 1.5
-        const auto size_of_data = std::min(section->SizeOfRawData, section->Misc.VirtualSize);
-        std::memmove(target_ptr, source_ptr, size_of_data);
-
-        DWORD old_protect;
-        VirtualProtect(target_ptr, size_of_data, PAGE_EXECUTE_READWRITE, &old_protect);
-#endif
     }
 }
 
@@ -92,7 +83,7 @@ void loader::load_imports(const utils::nt::library& target, const utils::nt::lib
                 function_name = import->Name;
                 function_procname = function_name.data();
             }
-#if 0
+#if 1
             std::stringstream ss;
             ss << "###### load_imports: function_name: " << function_name << std::endl;
             OutputDebugString(ss.str().c_str());
