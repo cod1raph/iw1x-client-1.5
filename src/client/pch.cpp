@@ -8,7 +8,7 @@
 Size found using Ghidra
 IMAGE_NT_HEADERS32 -> IMAGE_OPTIONAL_HEADER32 -> SizeOfStackReserve
 */
-#pragma comment(linker, "/stack:0x800000")
+#pragma comment(linker, "/stack:0x800000") // Seems unneeded
 
 // Windows
 #pragma comment(lib, "dbghelp.lib")
@@ -16,9 +16,3 @@ IMAGE_NT_HEADERS32 -> IMAGE_OPTIONAL_HEADER32 -> SizeOfStackReserve
 #pragma comment(lib, "opengl32.lib")
 
 char payload_data[BINARY_PAYLOAD_SIZE];
-
-extern "C"
-{
-    __declspec(dllexport) DWORD NvOptimusEnablement = 1;
-    __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
-};

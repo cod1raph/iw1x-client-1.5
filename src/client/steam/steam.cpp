@@ -19,15 +19,6 @@ namespace steam
         {
 
 
-
-
-
-
-
-
-
-
-
             return 1;
         }
         int SteamCleanup(TSteamError* pError)

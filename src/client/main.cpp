@@ -8,22 +8,11 @@
 #include "loader/component_loader.h"
 
 
-#include "steam/steam.h"
-
-
-
-#include "components/steam_proxy.h"
-
-
-
 
 DWORD address_cgame_mp;
 DWORD address_ui_mp;
 utils::hook::detour hook_GetModuleFileNameW;
 utils::hook::detour hook_GetModuleFileNameA;
-
-
-
 
 
 
@@ -33,7 +22,7 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
     {
         return GetProcAddress(hModule, lpProcName);
     }
-#if 0
+#if 1
     std::stringstream ss;
     ss << "###### stub_GetProcAddress: lpProcName: " << lpProcName << std::endl;
     OutputDebugString(ss.str().c_str());
@@ -41,15 +30,15 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
 
     if (!strcmp(lpProcName, "SteamIsAppSubscribed"))
     {
-        //return reinterpret_cast<FARPROC>(&steam::SteamIsAppSubscribed);
+
     }
     if (!strcmp(lpProcName, "SteamStartup"))
     {
-        //return reinterpret_cast<FARPROC>(&steam::SteamStartup);
+
     }
     if (!strcmp(lpProcName, "SteamCleanup"))
     {
-        //return reinterpret_cast<FARPROC>(&steam::SteamCleanup);
+
     }
 
 
@@ -68,62 +57,20 @@ static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
     auto ret = LoadLibraryA(lpLibFileName);
     if (lpLibFileName != NULL)
     {
-        //auto fileName = PathFindFileNameA(lpLibFileName);
-#if 0
+#if 1
         std::stringstream ss;
-        ss << "###### stub_LoadLibraryA: fileName: " << fileName << std::endl;
+        ss << "###### stub_LoadLibraryA: lpLibFileName: " << lpLibFileName << std::endl;
         OutputDebugString(ss.str().c_str());
 #endif
 
+        if (!strcmp(lpLibFileName, "steam.dll"))
+        {
+
+        }
 
 
 
-    }
-    return ret;
-}
 
-/*
-Return original client filename, so GPU driver knows what game it is,
-so if it has a profile for it, it will get enabled
-(this prevents buffer overrun when glGetString(GL_EXTENSIONS) gets called)
-*/
-// For AMD and Intel HD Graphics
-static DWORD WINAPI stub_GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize)
-{
-    auto* orig = static_cast<decltype(GetModuleFileNameA)*>(hook_GetModuleFileNameA.get_original());
-    auto ret = orig(hModule, lpFilename, nSize);
-    
-    if (!strcmp(PathFindFileNameA(lpFilename), "iw1x-1.5.exe"))
-    {
-        std::filesystem::path path = lpFilename;
-        auto binary = "CoDMP.exe";
-        path.replace_filename(binary);
-        std::string pathStr = path.string();
-        std::copy(pathStr.begin(), pathStr.end(), lpFilename);
-        lpFilename[pathStr.size()] = '\0';
-    }
-    return ret;
-}
-// For Nvidia
-static DWORD WINAPI stub_GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename, DWORD nSize)
-{
-    auto* orig = static_cast<decltype(GetModuleFileNameW)*>(hook_GetModuleFileNameW.get_original());
-    auto ret = orig(hModule, lpFilename, nSize);
-
-    int required_size = WideCharToMultiByte(CP_UTF8, 0, lpFilename, -1, nullptr, 0, nullptr, nullptr);
-    std::string pathStr(required_size - 1, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, lpFilename, -1, pathStr.data(), required_size, nullptr, nullptr);
-
-    if (!strcmp(PathFindFileNameA(pathStr.c_str()), "iw1x-1.5.exe"))
-    {
-        std::filesystem::path pathFs = pathStr;
-
-        auto client_filename = "CoDMP.exe";
-        pathFs.replace_filename(client_filename);
-        pathStr = pathFs.string();
-
-        required_size = MultiByteToWideChar(CP_UTF8, 0, pathStr.c_str(), -1, nullptr, 0);
-        MultiByteToWideChar(CP_UTF8, 0, pathStr.c_str(), -1, lpFilename, required_size);
     }
     return ret;
 }
@@ -213,11 +160,7 @@ static FARPROC load_binary()
             return component_loader::load_import(library, function);
         });
 
-    const utils::nt::library kernel32("kernel32.dll");
-    hook_GetModuleFileNameW.create(kernel32.get_proc<DWORD(WINAPI*)(HMODULE, LPWSTR, DWORD)>("GetModuleFileNameW"), stub_GetModuleFileNameW);
-    hook_GetModuleFileNameA.create(kernel32.get_proc<DWORD(WINAPI*)(HMODULE, LPSTR, DWORD)>("GetModuleFileNameA"), stub_GetModuleFileNameA);
-
-    auto client_filename = "CoDMP.exe";
+    auto client_filename = "CoDMP_o.exe";
 
     std::string data_codmp;
 
@@ -239,16 +182,11 @@ static FARPROC load_binary()
     return loader.load(self, data_codmp);
 }
 
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, /*_In_ LPSTR lpCmdLine*/LPSTR, _In_ int)
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, LPSTR, _In_ int)
 {
-#if 0
-    MessageBox(NULL, lpCmdLine, "", NULL);
-#endif
-
 #ifdef DEBUG
     // Delete stock crash file
     DeleteFileA("__codmp");
-    DeleteFileA("__mohaa");
 #endif
     
     auto premature_shutdown = true;
