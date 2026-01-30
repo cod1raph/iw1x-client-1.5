@@ -21,7 +21,7 @@ namespace steam
         operator bool() const;
 
         template <typename T, typename... Args>
-        T invoke(const std::string& method_name, Args ... args)
+        T invoke_s(const std::string& method_name, Args ... args)
         {
             if (!this->interface_ptr_)
             {
@@ -38,7 +38,7 @@ namespace steam
         }
 
         template <typename T, typename... Args>
-        T invoke(const size_t table_entry, Args ... args)
+        T invoke_s(const size_t table_entry, Args ... args)
         {
             if (!this->interface_ptr_)
             {

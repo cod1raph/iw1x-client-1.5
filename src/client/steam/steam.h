@@ -1,15 +1,11 @@
 #pragma once
 
+#include "interfaces/client.h"
 
 // http://www.rohitab.com/discuss/topic/33780-simple-question-about-steamdll/
 
-
-
-// #define STEAM_EXPORT extern "C" __declspec(dllexport)
-
 #define STEAM_API extern "C" __declspec(dllexport)
 #define STEAM_CALL __cdecl
-
 
 typedef enum
 {
@@ -23,8 +19,6 @@ typedef struct
 {
 
 } TSteamError;
-
-#include "interfaces/client.h"
 
 namespace steam
 {

@@ -9,54 +9,18 @@
 
 
 #include "steam/steam.h"
-#include <cstring>
-#include <cctype>
+
+
+
+#include "components/steam_proxy.h"
+
+
 
 
 DWORD address_cgame_mp;
 DWORD address_ui_mp;
 utils::hook::detour hook_GetModuleFileNameW;
 utils::hook::detour hook_GetModuleFileNameA;
-
-static void MSG_ERR(const char* msg)
-{
-    MessageBox(NULL, msg, MOD_NAME, MB_ICONERROR | MB_SETFOREGROUND);
-}
-
-static LONG WINAPI CrashLogger(EXCEPTION_POINTERS* exceptionPointers)
-{
-    std::string crashFilename = std::string(MOD_NAME) + "_crash.log";
-    std::ofstream logFile(crashFilename);
-    if (logFile.is_open())
-    {
-        HANDLE hProcess = GetCurrentProcess();
-        SymInitialize(hProcess, nullptr, TRUE);
-
-        auto exceptionAddress = exceptionPointers->ExceptionRecord->ExceptionAddress;
-        auto exceptionCode = exceptionPointers->ExceptionRecord->ExceptionCode;
-
-        IMAGEHLP_MODULE moduleInfo = { sizeof(moduleInfo) };
-        SymGetModuleInfo(hProcess, reinterpret_cast<DWORD>(exceptionAddress), &moduleInfo);
-        std::filesystem::path loadedImageName = moduleInfo.LoadedImageName;
-        auto file = loadedImageName.filename().string();
-
-        logFile << "File: " << file << std::endl;
-        logFile << "Exception Address: 0x" << std::hex << exceptionAddress << std::endl;
-        logFile << "Exception Code: 0x" << std::hex << exceptionCode << std::endl;
-
-        std::string errorMessage = "A crash occured, " + crashFilename + " available in your CoD folder.";
-
-        MSG_ERR(errorMessage.c_str());
-    }
-    return EXCEPTION_EXECUTE_HANDLER;
-}
-
-
-
-
-
-
-
 
 
 
@@ -69,26 +33,23 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
     {
         return GetProcAddress(hModule, lpProcName);
     }
-
 #if 0
     std::stringstream ss;
     ss << "###### stub_GetProcAddress: lpProcName: " << lpProcName << std::endl;
     OutputDebugString(ss.str().c_str());
 #endif
-    
-
 
     if (!strcmp(lpProcName, "SteamIsAppSubscribed"))
     {
-
+        //return reinterpret_cast<FARPROC>(&steam::SteamIsAppSubscribed);
     }
     if (!strcmp(lpProcName, "SteamStartup"))
     {
-
+        //return reinterpret_cast<FARPROC>(&steam::SteamStartup);
     }
     if (!strcmp(lpProcName, "SteamCleanup"))
     {
-
+        //return reinterpret_cast<FARPROC>(&steam::SteamCleanup);
     }
 
 
@@ -99,21 +60,15 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
     //if (!strcmp(lpProcName, "GlobalMemoryStatus"))
         //component_loader::post_unpack();
 
-
     return GetProcAddress(hModule, lpProcName);
 }
-
-
 
 static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
 {
     auto ret = LoadLibraryA(lpLibFileName);
-    auto hModule_address = (DWORD)GetModuleHandleA(lpLibFileName);
-
     if (lpLibFileName != NULL)
     {
-        auto fileName = PathFindFileNameA(lpLibFileName);
-
+        //auto fileName = PathFindFileNameA(lpLibFileName);
 #if 0
         std::stringstream ss;
         ss << "###### stub_LoadLibraryA: fileName: " << fileName << std::endl;
@@ -250,8 +205,6 @@ static FARPROC load_binary()
             ss << "###### set_import_resolver: library: " << library << ", function: " << function << std::endl;
             OutputDebugString(ss.str().c_str());
 #endif
-            
-            
             if (function == "GetProcAddress")
                 return stub_GetProcAddress;
             if (function == "LoadLibraryA")
@@ -286,16 +239,10 @@ static FARPROC load_binary()
     return loader.load(self, data_codmp);
 }
 
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR lpCmdLine, _In_ int)
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, /*_In_ LPSTR lpCmdLine*/LPSTR, _In_ int)
 {
 #if 0
     MessageBox(NULL, lpCmdLine, "", NULL);
-#endif
-    
-    SetUnhandledExceptionFilter(CrashLogger);
-#if 0
-    // Crash test
-    * (int*)nullptr = 1;
 #endif
 
 #ifdef DEBUG
@@ -326,7 +273,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR lpCmdLine, _In
     }
     catch (const std::exception& ex)
     {
-        MSG_ERR(ex.what());
+        MessageBox(NULL, ex.what(), MOD_NAME, MB_ICONERROR | MB_SETFOREGROUND);
         return 1;
     }
     

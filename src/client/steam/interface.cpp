@@ -40,7 +40,7 @@ namespace steam
                 const auto result = this->analyze_method(ptr);
                 if (!result.empty())
                 {
-#if 0
+#if 1
                     std::stringstream ss;
                     ss << "###### search_method result: " << result << std::endl;
                     OutputDebugString(ss.str().c_str());

@@ -2,15 +2,17 @@
 #if 1
 #include "steam_proxy.h"
 
-#include "steam/interface.h"
-#include "steam/steam.h"
+#include "../steam/interface.h"
+#include "../steam/steam.h"
 
 namespace steam_proxy
 {
     const auto app_id = 2620;
 
-    utils::nt::library steam{};
-    utils::nt::library steam_client{};
+    utils::nt::library steam_lib{};
+    steam::interface steam_interface{};
+
+
     
     const char* SteamAPI_GetSteamInstallPath()
     {
@@ -39,9 +41,22 @@ namespace steam_proxy
         if (steam_path.empty()) return;
 
         SetEnvironmentVariableA("SteamAppId", std::to_string(app_id).data());
-        utils::nt::library::load(steam_path / "steam.dll");
+        steam_lib = utils::nt::library::load(steam_path / "steam.dll");
         //steam_client = utils::nt::library::load(steam_path / "steamclient.dll");
         //utils::nt::library::load(steam_path / "gameoverlayrenderer.dll");
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
