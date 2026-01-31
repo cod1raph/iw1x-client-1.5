@@ -15,14 +15,14 @@ utils::hook::detour hook_GetModuleFileNameW;
 utils::hook::detour hook_GetModuleFileNameA;
 
 
-
+#if 0
 static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lpProcName)
 {
     if (HIWORD(lpProcName) == 0)
     {
         return GetProcAddress(hModule, lpProcName);
     }
-#if 1
+#if 0
     std::stringstream ss;
     ss << "###### stub_GetProcAddress: lpProcName: " << lpProcName << std::endl;
     OutputDebugString(ss.str().c_str());
@@ -44,28 +44,35 @@ static FARPROC WINAPI stub_GetProcAddress(const HMODULE hModule, const LPCSTR lp
 
 
 
-
-
     //if (!strcmp(lpProcName, "GlobalMemoryStatus"))
         //component_loader::post_unpack();
 
     return GetProcAddress(hModule, lpProcName);
 }
+#endif
 
 static HMODULE WINAPI stub_LoadLibraryA(LPCSTR lpLibFileName)
 {
     auto ret = LoadLibraryA(lpLibFileName);
     if (lpLibFileName != NULL)
     {
-#if 1
+#if 0
         std::stringstream ss;
         ss << "###### stub_LoadLibraryA: lpLibFileName: " << lpLibFileName << std::endl;
         OutputDebugString(ss.str().c_str());
 #endif
 
+
+
         if (!strcmp(lpLibFileName, "steam.dll"))
         {
+            MessageBox(NULL, "will now lose hooks", MOD_NAME, MB_ICONINFORMATION | MB_SETFOREGROUND);
+        }
 
+
+        if (!strcmp(lpLibFileName, "ui_mp_x86.dll"))
+        {
+            MessageBox(NULL, "WORKS", MOD_NAME, MB_ICONINFORMATION | MB_SETFOREGROUND); // Never reached
         }
 
 
@@ -152,8 +159,8 @@ static FARPROC load_binary()
             ss << "###### set_import_resolver: library: " << library << ", function: " << function << std::endl;
             OutputDebugString(ss.str().c_str());
 #endif
-            if (function == "GetProcAddress")
-                return stub_GetProcAddress;
+            //if (function == "GetProcAddress")
+                //return stub_GetProcAddress;
             if (function == "LoadLibraryA")
                 return stub_LoadLibraryA;
 
@@ -161,9 +168,7 @@ static FARPROC load_binary()
         });
 
     auto client_filename = "CoDMP_o.exe";
-
     std::string data_codmp;
-
     if (!read_file(client_filename, &data_codmp))
     {
         std::stringstream ss;
@@ -188,13 +193,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, LPSTR, _In_ int)
     // Delete stock crash file
     DeleteFileA("__codmp");
 #endif
-    
-    auto premature_shutdown = true;
-    const auto _ = gsl::finally([&premature_shutdown]()
-        {
-            if (premature_shutdown)
-                component_loader::pre_destroy();
-        });
 
     FARPROC entry_point;
     try

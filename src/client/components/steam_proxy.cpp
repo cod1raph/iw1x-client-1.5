@@ -5,6 +5,9 @@
 #include "../steam/interface.h"
 #include "../steam/steam.h"
 
+
+#include "io.h"
+
 namespace steam_proxy
 {
     const auto app_id = 2620;
@@ -35,9 +38,13 @@ namespace steam_proxy
         const std::filesystem::path steam_path = SteamAPI_GetSteamInstallPath();
         if (steam_path.empty()) return;
 
-        SetEnvironmentVariableA("SteamAppId", std::to_string(app_id).data());
-        utils::nt::library::load(steam_path / "steam.dll");
+        SetEnvironmentVariableA("SteamAppId", ::utils::string::va("%lu", app_id));
+        SetEnvironmentVariableA("SteamGameId", ::utils::string::va("%llu", app_id & 0xFFFFFF));
+        utils::io::write_file("steam_appid.txt", utils::string::va("%lu", app_id), false);
 
+
+
+        utils::nt::library::load(steam_path / "steam.dll");
 
 
 
@@ -49,7 +56,7 @@ namespace steam_proxy
     public:
         void post_load() override
         {
-            load();
+            //load();
         }
     };
 }
